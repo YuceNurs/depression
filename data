@@ -1,0 +1,56 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras.models import Sequential
+from scikeras.wrappers import KerasClassifier, KerasRegressor
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization , Embedding, Flatten
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import LabelEncoder,StandardScaler
+from sklearn.model_selection import train_test_split ,cross_val_score
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix,classification_report, accuracy_score
+import keras_tuner
+import keras
+
+df = pd.read_csv('C:\\Users\\yucen\\Downloads\\student_depression_dataset.csv')
+df_head = df.head()
+df_description= df.describe()
+df.shape, df.columns, df_head, df_description, df.info()
+
+
+print(tf.__version__)
+import datetime
+print(f"Notebook last run (end-to-end): {datetime.datetime.now()}")
+print(df.isnull().sum()) #veride null var mı kontrolü 
+
+print((df == '?').sum())
+print(df[df.apply(lambda x: x.astype(str).str.contains('\\?')).any(axis=1)]) #kodda ? hatası alıyorum veri setini kontrol ettim.
+
+from sklearn.preprocessing import LabelEncoder #string ifadeleri float ya da integer olarak tekrar kazandıralım
+#categorical_columns = ['Gender', 'Family History of Mental Illness','Have you ever had suicidal thoughts ?']
+
+#for col in categorical_columns:
+#     df[col + '_encoded'] = encoder.fit_transform(df[col])
+    
+encoder = LabelEncoder()
+df['Gender'] = encoder.fit_transform(df['Gender'])
+df['Family History of Mental Illness'] = encoder.fit_transform(df['Family History of Mental Illness'])
+df['Have you ever had suicidal thoughts ?'] = encoder.fit_transform(df['Have you ever had suicidal thoughts ?'])
+print (df)
+
+df = df[df['Financial Stress'] != '?']
+encoder = LabelEncoder()
+df['City'] = encoder.fit_transform(df['City'])
+df['Profession'] = encoder.fit_transform(df['Profession'])
+df['Degree'] = encoder.fit_transform(df['Degree'])
+df['Dietary Habits'] = encoder.fit_transform(df['Dietary Habits'])
+df['Sleep Duration'] = encoder.fit_transform(df['Sleep Duration'])
+model = Sequential()
+model.add(Embedding(input_dim=len(df['City'].unique()), output_dim=5))
+model.add(Embedding(input_dim=len(df['Profession'].unique()), output_dim=5))
+model.add(Embedding(input_dim=len(df['Degree'].unique()), output_dim=5))
+model.add(Embedding(input_dim=len(df['Dietary Habits'].unique()), output_dim=5))
+model.add(Embedding(input_dim=len(df['Sleep Duration'].unique()), output_dim=5))

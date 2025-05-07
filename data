@@ -117,3 +117,123 @@ mlp_clf.fit(trainX, trainY)
 y_pred = mlp_clf.predict(testX)
 print('Test Doğruluk (Accuracy): {:.2f}'.format(accuracy_score(testY, y_pred)))
 veriyi sabitledim ve artık başarı 0.76 oh be
+############################################################
+mlp = MLPClassifier(
+    hidden_layer_sizes=(64,),  # 2 hidden layer
+    activation='relu',
+    solver='adam',
+    learning_rate_init=0.001,
+    alpha=0.0001,  # L2 regularization
+    batch_size=256,
+    early_stopping=True,
+    validation_fraction=0.1,
+    max_iter=500,
+    random_state=42
+) 
+mlp_clf.fit(trainX, trainY)
+y_pred = mlp_clf.predict(testX)
+print('Test Doğruluk (Accuracy): {:.2f}'.format(accuracy_score(testY, y_pred)))
+cm = confusion_matrix(testY, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot()
+plt.show()
+
+# Confusion matrix değerleri
+tn, fp = 1834, 474
+fn, tp = 397, 2875
+
+# y_true ve y_pred üret
+y_true = np.array([0]*tn + [0]*fp + [1]*fn + [1]*tp)
+y_pred = np.array([0]*tn + [1]*fp + [0]*fn + [1]*tp)
+
+# Metrikleri hesapla
+print("Accuracy:", accuracy_score(y_true, y_pred))
+print("\nClassification Report:")
+print(classification_report(y_true, y_pred, digits=4))
+
+confusion_matrix(testY, y_pred) #şansa yaşıyoruz 
+
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+trainX = sc.fit_transform(trainX)
+testX = sc.transform(testX)
+
+
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.metrics import classification_report, accuracy_score
+
+# Modeli kur
+model = Sequential([
+    Dense(512, activation='relu', input_shape=(trainX.shape[1],)),
+    Dropout(0.4),
+    Dense(256, activation='relu'),
+    Dropout(0.4),
+    Dense(128, activation='relu'),
+    Dropout(0.3),
+    Dense(1, activation='sigmoid')  # Binary classification
+])
+
+# Derle
+model.compile(
+    optimizer=Adam(learning_rate=0.0005),
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+# Early stopping ekle
+early_stop = EarlyStopping(
+    monitor='val_loss',
+    patience=10,
+    restore_best_weights=True
+)
+
+# Eğit
+history = model.fit(
+    trainX, trainY,
+    validation_split=0.1,
+    epochs=100,
+    batch_size=256,
+    callbacks=[early_stop],
+    verbose=1
+)
+
+# Test üzerinde tahmin
+y_pred_prob = model.predict(testX)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+# Değerlendirme
+print("Accuracy: {:.4f}".format(accuracy_score(testY, y_pred)))
+print("\nClassification Report:\n", classification_report(testY, y_pred))
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+### 0.84 başarı
+
+cm = confusion_matrix(testY, y_pred)
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel('Tahmin')
+plt.ylabel('Gerçek')
+plt.title('Confusion Matrix')
+plt.show()
+
+from sklearn.metrics import roc_curve, auc
+
+fpr, tpr, thresholds = roc_curve(testY, y_pred_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure(figsize=(6, 4))
+plt.plot(fpr, tpr, color='darkorange', label='ROC curve (area = {:.2f})'.format(roc_auc))
+plt.plot([0, 1], [0, 1], color='navy', linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (ROC)')
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.show()
+
